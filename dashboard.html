@@ -243,18 +243,40 @@ async function loadSeatStatus() {
 createSeats();
 loadSeatStatus();
 
-grid.addEventListener("click", (e) => {
+grid.addEventListener("click", async (e) => {
+
   if (!e.target.classList.contains("dot")) return;
 
   currentSeat = e.target.dataset.seat;
-  const slot = e.target.dataset.slot;
+  const clickedSlot = e.target.dataset.slot;
 
   const plan = document.getElementById("planSelect").value;
 
   if (plan === "s1s2") currentSlots = ["s1","s2"];
   else if (plan === "s3s4") currentSlots = ["s3","s4"];
   else if (plan === "all") currentSlots = ["s1","s2","s3","s4"];
-  else currentSlots = [slot];
+  else currentSlots = [clickedSlot];
+
+  const seatRef = doc(db, "seats", "seat_" + currentSeat);
+  const snap = await getDoc(seatRef);
+
+  if (snap.exists() && snap.data()[clickedSlot]) {
+    const booking = snap.data()[clickedSlot];
+
+    document.getElementById("name").value = booking.name || "";
+    document.getElementById("mobile").value = booking.mobile || "";
+    document.getElementById("email").value = booking.email || "";
+    document.getElementById("idNumber").value = booking.idNumber || "";
+    document.getElementById("validTill").value = booking.validTill || "";
+
+  } else {
+    // No booking → clear form
+    document.getElementById("name").value = "";
+    document.getElementById("mobile").value = "";
+    document.getElementById("email").value = "";
+    document.getElementById("idNumber").value = "";
+    document.getElementById("validTill").value = "";
+  }
 
   modal.style.display = "flex";
 });
@@ -313,5 +335,6 @@ document.getElementById("saveBtn").onclick = async () => {
 
 </body>
 </html>
+
 
 
