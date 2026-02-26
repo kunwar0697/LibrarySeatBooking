@@ -1,29 +1,109 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Seat Booking</title>
-  <style>
-    .seat {
-      width: 50px;
-      height: 50px;
-      margin: 5px;
-      display: inline-block;
-      background: lightgreen;
-      text-align: center;
-      line-height: 50px;
-      cursor: pointer;
-    }
-    .booked {
-      background: red;
-      color: white;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seat Dashboard</title>
+
+<style>
+* { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+
+body {
+  margin: 0;
+  background: #f4f6f9;
+  padding: 15px;
+}
+
+.top-bar {
+  margin-bottom: 20px;
+}
+
+select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  width: 100%;
+  max-width: 400px;
+}
+
+.seat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.seat-card {
+  background: white;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.seat-number {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.green { background: #2ecc71; }
+.red { background: #e74c3c; }
+
+/* Modal */
+
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.modal-content input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+.modal-content button {
+  padding: 10px;
+  width: 100%;
+  background: #2a5298;
+  color: white;
+  border: none;
+  border-radius: 8px;
+}
+</style>
 </head>
+
 <body>
 
-<h2>Seat Booking Portal</h2>
-
-<select id="slotSelect">
+<div class="top-bar">
+<select id="planSelect">
   <option value="s1">6-10 AM (399)</option>
   <option value="s2">10-2 PM (399)</option>
   <option value="s3">2-6 PM (399)</option>
@@ -32,63 +112,93 @@
   <option value="s3s4">2PM-10PM (799)</option>
   <option value="all">6AM-10PM (1199)</option>
 </select>
+</div>
 
-<div id="seats"></div>
+<div class="seat-grid" id="seatGrid"></div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3>Member Details</h3>
+    <input type="text" id="name" placeholder="Name">
+    <input type="text" id="mobile" placeholder="Mobile">
+    <input type="email" id="email" placeholder="Email">
+    <input type="text" id="idNumber" placeholder="Aadhar / PAN">
+    <input type="date" id="validTill">
+    <button onclick="saveBooking()">Save</button>
+  </div>
+</div>
 
 <script type="module">
 import { db } from "./firebase.js";
 import { doc, getDoc, setDoc } from 
 "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const seatsDiv = document.getElementById("seats");
-const slotSelect = document.getElementById("slotSelect");
+const grid = document.getElementById("seatGrid");
+const modal = document.getElementById("modal");
 
-function generateSeats() {
+let currentSeat = null;
+let currentSlots = [];
+
+function createSeats() {
   for (let i = 1; i <= 142; i++) {
-    const seat = document.createElement("div");
-    seat.classList.add("seat");
-    seat.innerText = i;
-
-    seat.onclick = () => bookSeat(i);
-
-    seatsDiv.appendChild(seat);
+    const card = document.createElement("div");
+    card.className = "seat-card";
+    card.innerHTML = `
+      <div class="seat-number">Seat ${i}</div>
+      <div class="dots">
+        <div class="dot green" onclick="openForm(${i}, 's1')"></div>
+        <div class="dot green" onclick="openForm(${i}, 's2')"></div>
+        <div class="dot green" onclick="openForm(${i}, 's3')"></div>
+        <div class="dot green" onclick="openForm(${i}, 's4')"></div>
+      </div>
+    `;
+    grid.appendChild(card);
   }
 }
 
-async function bookSeat(seatId) {
-  const slot = slotSelect.value;
-  const seatRef = doc(db, "seats", "seat_" + seatId);
+window.openForm = function(seatId, slot) {
+  currentSeat = seatId;
+
+  const plan = document.getElementById("planSelect").value;
+
+  if (plan === "s1s2") currentSlots = ["s1","s2"];
+  else if (plan === "s3s4") currentSlots = ["s3","s4"];
+  else if (plan === "all") currentSlots = ["s1","s2","s3","s4"];
+  else currentSlots = [slot];
+
+  modal.style.display = "flex";
+}
+
+window.saveBooking = async function() {
+  const seatRef = doc(db, "seats", "seat_" + currentSeat);
   const snap = await getDoc(seatRef);
 
-  let data = snap.exists() ? snap.data() : 
-  { s1:false, s2:false, s3:false, s4:false };
+  let data = snap.exists() ? snap.data() : {};
 
-  let slotsToBook = [];
+  const today = new Date().toISOString().split("T")[0];
 
-  if (slot === "s1") slotsToBook = ["s1"];
-  if (slot === "s2") slotsToBook = ["s2"];
-  if (slot === "s3") slotsToBook = ["s3"];
-  if (slot === "s4") slotsToBook = ["s4"];
-  if (slot === "s1s2") slotsToBook = ["s1","s2"];
-  if (slot === "s3s4") slotsToBook = ["s3","s4"];
-  if (slot === "all") slotsToBook = ["s1","s2","s3","s4"];
+  const booking = {
+    name: name.value,
+    mobile: mobile.value,
+    email: email.value,
+    idNumber: idNumber.value,
+    plan: document.getElementById("planSelect").value,
+    createdAt: today,
+    validTill: validTill.value
+  };
 
-  for (let s of slotsToBook) {
-    if (data[s]) {
-      alert("Slot already booked");
-      return;
-    }
-  }
-
-  for (let s of slotsToBook) {
-    data[s] = true;
+  for (let s of currentSlots) {
+    data[s] = booking;
   }
 
   await setDoc(seatRef, data);
-  alert("Seat booked successfully");
-}
 
-generateSeats();
+  modal.style.display = "none";
+  location.reload();
+};
+
+createSeats();
 </script>
+
 </body>
 </html>
