@@ -125,6 +125,7 @@ select {
 </head>
 
 <body>
+  <!--
 <button id="exportBtn" style="margin-left:10px;padding:10px;border:none;border-radius:8px;background:#27ae60;color:white;">
 Export to Excel
 </button>
@@ -140,7 +141,33 @@ Export to Excel
   <option value="all">6AM-10PM (1199)</option>
 </select>
 </div>
+-->
 
+<div class="top-bar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <select id="planSelect">
+      <option value="s1">6-10 AM (399)</option>
+      <option value="s2">10-2 PM (399)</option>
+      <option value="s3">2-6 PM (399)</option>
+      <option value="s4">6-10 PM (399)</option>
+      <option value="s1s2">6AM-2PM (799)</option>
+      <option value="s3s4">2PM-10PM (799)</option>
+      <option value="all">6AM-10PM (1199)</option>
+    </select>
+
+    <button id="exportBtn"
+      style="padding:10px 14px;border:none;border-radius:8px;background:#27ae60;color:white;">
+      Export to Excel
+    </button>
+  </div>
+
+  <button id="logoutBtn"
+    style="padding:10px 14px;border:none;border-radius:8px;background:#e74c3c;color:white;">
+    Logout
+  </button>
+
+</div>
 
   
 <div class="seat-grid" id="seatGrid"></div>
@@ -164,6 +191,9 @@ Export to Excel
 import { db } from "./firebase.js";
 import { doc, getDoc, setDoc } from 
 "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  import { signOut } from 
+"https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 import { collection, getDocs } from 
 "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -204,6 +234,11 @@ function createSeats() {
   }
 }
 
+document.getElementById("logoutBtn").onclick = async () => {
+  await signOut(auth);
+  window.location.href = "index.html";
+};
+  
 document.getElementById("exportBtn").onclick = async () => {
 
   const snapshot = await getDocs(collection(db, "seats"));
@@ -401,6 +436,7 @@ document.getElementById("saveBtn").onclick = async () => {
 
 </body>
 </html>
+
 
 
 
