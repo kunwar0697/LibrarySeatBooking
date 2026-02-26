@@ -125,7 +125,10 @@ select {
 </head>
 
 <body>
-
+<button id="exportBtn" style="margin-left:10px;padding:10px;border:none;border-radius:8px;background:#27ae60;color:white;">
+Export to Excel
+</button>
+</br>
 <div class="top-bar">
 <select id="planSelect">
   <option value="s1">6-10 AM (399)</option>
@@ -138,9 +141,7 @@ select {
 </select>
 </div>
 
-<button id="exportBtn" style="margin-left:10px;padding:10px;border:none;border-radius:8px;background:#27ae60;color:white;">
-Export to Excel
-</button>
+
   
 <div class="seat-grid" id="seatGrid"></div>
 
@@ -400,6 +401,7 @@ document.getElementById("saveBtn").onclick = async () => {
 
 </body>
 </html>
+
 
 
 
