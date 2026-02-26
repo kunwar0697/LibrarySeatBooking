@@ -234,6 +234,35 @@ function createSeats() {
   }
 }
 
+  function updateDotVisibility() {
+
+  const plan = document.getElementById("planSelect").value;
+
+  let visibleSlots = [];
+
+  if (plan === "s1") visibleSlots = ["s1"];
+  else if (plan === "s2") visibleSlots = ["s2"];
+  else if (plan === "s3") visibleSlots = ["s3"];
+  else if (plan === "s4") visibleSlots = ["s4"];
+  else if (plan === "s1s2") visibleSlots = ["s1","s2"];
+  else if (plan === "s3s4") visibleSlots = ["s3","s4"];
+  else visibleSlots = ["s1","s2","s3","s4"];
+
+  document.querySelectorAll(".dot").forEach(dot => {
+    const slot = dot.dataset.slot;
+
+    if (visibleSlots.includes(slot)) {
+      dot.style.display = "block";
+    } else {
+      dot.style.display = "none";
+    }
+  });
+
+}
+
+  document.getElementById("planSelect")
+  .addEventListener("change", updateDotVisibility);
+
 document.getElementById("logoutBtn").onclick = async () => {
   await signOut(auth);
   window.location.href = "index.html";
@@ -343,6 +372,7 @@ async function loadSeatStatus() {
 
 createSeats();
 loadSeatStatus();
+updateDotVisibility();
 
 grid.addEventListener("click", async (e) => {
 
@@ -436,6 +466,7 @@ document.getElementById("saveBtn").onclick = async () => {
 
 </body>
 </html>
+
 
 
 
