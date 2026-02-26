@@ -47,8 +47,10 @@ select {
 }
 
 .seat-number {
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   margin-bottom: 10px;
+  color: #2c3e50;
 }
 
 .dots {
@@ -170,7 +172,7 @@ Export to Excel
 
    <div id="availableCount"
   style="padding:10px 14px;background:#2ecc71;color:white;border-radius:8px;font-weight:600;">
-  Available: 0
+  Available: -
 </div>
 
 
@@ -235,7 +237,7 @@ function createSeats() {
     const card = document.createElement("div");
     card.className = "seat-card";
     card.innerHTML = `
-      <div class="seat-number">Seat ${i}</div>
+      <div class="seat-number">${i}</div>
       <div class="dots">
         <div class="dot green" data-seat="${i}" data-slot="s1"></div>
         <div class="dot green" data-seat="${i}" data-slot="s2"></div>
@@ -594,6 +596,7 @@ document.getElementById("saveBtn").onclick = async () => {
 
 </body>
 </html>
+
 
 
 
