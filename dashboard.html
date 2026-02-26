@@ -67,6 +67,8 @@ select {
 
 .green { background: #2ecc71; }
 .red { background: #e74c3c; }
+.grey { background: #7f8c8d; }
+.orange { background: #f39c12; }
 
 /* Modal */
 
@@ -194,7 +196,52 @@ function createSeats() {
   }
 }
 
+async function loadSeatStatus() {
+
+  const today = new Date().toISOString().split("T")[0];
+
+  for (let i = 1; i <= 142; i++) {
+
+    const seatRef = doc(db, "seats", "seat_" + i);
+    const snap = await getDoc(seatRef);
+
+    if (!snap.exists()) continue;
+
+    const data = snap.data();
+
+    ["s1","s2","s3","s4"].forEach(slot => {
+
+      const dot = document.querySelector(
+        `.dot[data-seat="${i}"][data-slot="${slot}"]`
+      );
+
+      if (!dot) return;
+
+      dot.classList.remove("green","grey","orange");
+
+      if (!data[slot]) {
+        dot.classList.add("green");
+        return;
+      }
+
+      const validTill = data[slot].validTill;
+
+      if (validTill < today) {
+        dot.classList.add("green");
+      } 
+      else if (validTill === today) {
+        dot.classList.add("orange");
+      } 
+      else {
+        dot.classList.add("grey");
+      }
+
+    });
+  }
+}
+
 createSeats();
+loadSeatStatus();
 
 grid.addEventListener("click", (e) => {
   if (!e.target.classList.contains("dot")) return;
@@ -266,4 +313,5 @@ document.getElementById("saveBtn").onclick = async () => {
 
 </body>
 </html>
+
 
