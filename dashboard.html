@@ -138,6 +138,10 @@ select {
 </select>
 </div>
 
+<button id="exportBtn" style="margin-left:10px;padding:10px;border:none;border-radius:8px;background:#27ae60;color:white;">
+Export to Excel
+</button>
+  
 <div class="seat-grid" id="seatGrid"></div>
 
 <div class="modal" id="modal">
@@ -158,6 +162,9 @@ select {
 
 import { db } from "./firebase.js";
 import { doc, getDoc, setDoc } from 
+"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+import { collection, getDocs } from 
 "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 import { getAuth, onAuthStateChanged } from
@@ -196,6 +203,64 @@ function createSeats() {
   }
 }
 
+document.getElementById("exportBtn").onclick = async () => {
+
+  const snapshot = await getDocs(collection(db, "seats"));
+
+  let rows = [];
+  const today = new Date().toISOString().split("T")[0];
+
+  snapshot.forEach(docSnap => {
+
+    const seatId = docSnap.id.replace("seat_","");
+    const data = docSnap.data();
+
+    ["s1","s2","s3","s4"].forEach(slot => {
+
+      if (!data[slot]) return;
+
+      const booking = data[slot];
+
+      rows.push({
+        Seat: seatId,
+        Slot: slot,
+        Name: booking.name,
+        Mobile: booking.mobile,
+        Email: booking.email,
+        ID: booking.idNumber,
+        Plan: booking.plan,
+        CreatedDate: booking.createdAt,
+        ValidTill: booking.validTill,
+        Status: booking.validTill < today ? "Expired" : "Active"
+      });
+
+    });
+
+  });
+
+  if (rows.length === 0) {
+    alert("No data found.");
+    return;
+  }
+
+  let csv = Object.keys(rows[0]).join(",") + "\n";
+
+  rows.forEach(row => {
+    csv += Object.values(row).join(",") + "\n";
+  });
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "Library_Seat_Data.csv";
+  a.click();
+
+  URL.revokeObjectURL(url);
+};
+  
+  
 async function loadSeatStatus() {
 
   const today = new Date().toISOString().split("T")[0];
@@ -335,6 +400,7 @@ document.getElementById("saveBtn").onclick = async () => {
 
 </body>
 </html>
+
 
 
 
