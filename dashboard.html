@@ -168,11 +168,18 @@ Export to Excel
     </button>
   </div>
 
+   <div id="availableCount"
+  style="padding:10px 14px;background:#2ecc71;color:white;border-radius:8px;font-weight:600;">
+  Available: 0
+</div>
+
+
   <button id="logoutBtn"
     style="padding:10px 14px;border:none;border-radius:8px;background:#e74c3c;color:white;">
     Logout
   </button>
 
+ 
 </div>
 
   
@@ -240,7 +247,64 @@ function createSeats() {
   }
 }
 
-  async function updateSeatAvailability() {
+async function updateSeatAvailability() {
+
+  const plan = document.getElementById("planSelect").value;
+
+  let requiredSlots = [];
+
+  if (plan === "s1") requiredSlots = ["s1"];
+  else if (plan === "s2") requiredSlots = ["s2"];
+  else if (plan === "s3") requiredSlots = ["s3"];
+  else if (plan === "s4") requiredSlots = ["s4"];
+  else if (plan === "s1s2") requiredSlots = ["s1","s2"];
+  else if (plan === "s3s4") requiredSlots = ["s3","s4"];
+  else requiredSlots = ["s1","s2","s3","s4"];
+
+  const today = new Date().toISOString().split("T")[0];
+
+  let availableCount = 0;
+
+  for (let i = 1; i <= 142; i++) {
+
+    const card = document.querySelector(
+      `.seat-card:nth-child(${i})`
+    );
+
+    const seatRef = doc(db, "seats", "seat_" + i);
+    const snap = await getDoc(seatRef);
+
+    let isAvailable = true;
+
+    if (snap.exists()) {
+      const data = snap.data();
+
+      for (let slot of requiredSlots) {
+
+        if (!data[slot]) continue;
+
+        const validTill = data[slot].validTill;
+
+        if (validTill >= today) {
+          isAvailable = false;
+          break;
+        }
+      }
+    }
+
+    if (isAvailable) {
+      card.classList.remove("disabled-seat");
+      availableCount++;
+    } else {
+      card.classList.add("disabled-seat");
+    }
+  }
+
+  document.getElementById("availableCount").innerText =
+    "Available: " + availableCount;
+}
+  
+ /* async function updateSeatAvailability() {
 
   const plan = document.getElementById("planSelect").value;
 
@@ -289,7 +353,7 @@ function createSeats() {
       card.classList.add("disabled-seat");
     }
   }
-}
+}*/
 
   function updateDotVisibility() {
 
@@ -530,6 +594,7 @@ document.getElementById("saveBtn").onclick = async () => {
 
 </body>
 </html>
+
 
 
 
