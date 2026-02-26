@@ -65,6 +65,12 @@ select {
   transition: 0.2s;
 }
 
+  .disabled-seat {
+  background: #fdecea;
+  pointer-events: none;
+  opacity: 0.7;
+}
+  
 .green { background: #2ecc71; }
 .red { background: #e74c3c; }
 .grey { background: #7f8c8d; }
@@ -234,6 +240,57 @@ function createSeats() {
   }
 }
 
+  async function updateSeatAvailability() {
+
+  const plan = document.getElementById("planSelect").value;
+
+  let requiredSlots = [];
+
+  if (plan === "s1") requiredSlots = ["s1"];
+  else if (plan === "s2") requiredSlots = ["s2"];
+  else if (plan === "s3") requiredSlots = ["s3"];
+  else if (plan === "s4") requiredSlots = ["s4"];
+  else if (plan === "s1s2") requiredSlots = ["s1","s2"];
+  else if (plan === "s3s4") requiredSlots = ["s3","s4"];
+  else requiredSlots = ["s1","s2","s3","s4"];
+
+  const today = new Date().toISOString().split("T")[0];
+
+  for (let i = 1; i <= 142; i++) {
+
+    const card = document.querySelector(
+      `.seat-card:nth-child(${i})`
+    );
+
+    const seatRef = doc(db, "seats", "seat_" + i);
+    const snap = await getDoc(seatRef);
+
+    let isAvailable = true;
+
+    if (snap.exists()) {
+      const data = snap.data();
+
+      for (let slot of requiredSlots) {
+
+        if (!data[slot]) continue;
+
+        const validTill = data[slot].validTill;
+
+        if (validTill >= today) {
+          isAvailable = false;
+          break;
+        }
+      }
+    }
+
+    if (isAvailable) {
+      card.classList.remove("disabled-seat");
+    } else {
+      card.classList.add("disabled-seat");
+    }
+  }
+}
+
   function updateDotVisibility() {
 
   const plan = document.getElementById("planSelect").value;
@@ -260,8 +317,14 @@ function createSeats() {
 
 }
 
+ // document.getElementById("planSelect")
+ // .addEventListener("change", updateDotVisibility);
+
   document.getElementById("planSelect")
-  .addEventListener("change", updateDotVisibility);
+  .addEventListener("change", () => {
+    updateDotVisibility();
+    updateSeatAvailability();
+  });
 
 document.getElementById("logoutBtn").onclick = async () => {
   await signOut(auth);
@@ -373,6 +436,7 @@ async function loadSeatStatus() {
 createSeats();
 loadSeatStatus();
 updateDotVisibility();
+updateSeatAvailability();
 
 grid.addEventListener("click", async (e) => {
 
@@ -466,6 +530,7 @@ document.getElementById("saveBtn").onclick = async () => {
 
 </body>
 </html>
+
 
 
 
