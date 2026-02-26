@@ -5,99 +5,103 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Seat Dashboard</title>
 
-<style>
-* { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+<script type="module">
+import { db } from "./firebase.js";
+import { doc, getDoc, setDoc } from 
+"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-body {
-  margin: 0;
-  background: #f4f6f9;
-  padding: 15px;
+const grid = document.getElementById("seatGrid");
+const modal = document.getElementById("modal");
+
+let currentSeat = null;
+let currentSlots = [];
+
+function createSeats() {
+  for (let i = 1; i <= 142; i++) {
+    const card = document.createElement("div");
+    card.className = "seat-card";
+    card.innerHTML = `
+      <div class="seat-number">Seat ${i}</div>
+      <div class="dots">
+        <div class="dot green" onclick="openForm(${i}, 's1')"></div>
+        <div class="dot green" onclick="openForm(${i}, 's2')"></div>
+        <div class="dot green" onclick="openForm(${i}, 's3')"></div>
+        <div class="dot green" onclick="openForm(${i}, 's4')"></div>
+      </div>
+    `;
+    grid.appendChild(card);
+  }
 }
 
-.top-bar {
-  margin-bottom: 20px;
-}
+window.openForm = function(seatId, slot) {
+  currentSeat = seatId;
 
-select {
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  width: 100%;
-  max-width: 400px;
-}
+  const plan = document.getElementById("planSelect").value;
 
-.seat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
-}
+  if (plan === "s1s2") currentSlots = ["s1","s2"];
+  else if (plan === "s3s4") currentSlots = ["s3","s4"];
+  else if (plan === "all") currentSlots = ["s1","s2","s3","s4"];
+  else currentSlots = [slot];
 
-.seat-card {
-  background: white;
-  padding: 12px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  text-align: center;
-}
+  modal.style.display = "flex";
+};
 
-.seat-number {
-  font-weight: bold;
-  margin-bottom: 8px;
-}
+window.closeModal = function() {
+  modal.style.display = "none";
+};
 
-.dots {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-}
+window.clearForm = function() {
+  document.getElementById("name").value = "";
+  document.getElementById("mobile").value = "";
+  document.getElementById("email").value = "";
+  document.getElementById("idNumber").value = "";
+  document.getElementById("validTill").value = "";
+};
 
-.dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  cursor: pointer;
-}
+window.saveBooking = async function() {
 
-.green { background: #2ecc71; }
-.red { background: #e74c3c; }
+  const nameVal = document.getElementById("name").value.trim();
+  const mobileVal = document.getElementById("mobile").value.trim();
+  const emailVal = document.getElementById("email").value.trim();
+  const idVal = document.getElementById("idNumber").value.trim();
+  const validTillVal = document.getElementById("validTill").value;
 
-/* Modal */
+  if (!nameVal || !mobileVal || !validTillVal) {
+    alert("Name, Mobile and Valid Till date are required.");
+    return;
+  }
 
-.modal {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.4);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  padding: 10px;
-}
+  const seatRef = doc(db, "seats", "seat_" + currentSeat);
+  const snap = await getDoc(seatRef);
 
-.modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 400px;
-}
+  let data = snap.exists() ? snap.data() : {};
 
-.modal-content input {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 10px;
-}
+  const today = new Date().toISOString().split("T")[0];
 
-.modal-content button {
-  padding: 10px;
-  width: 100%;
-  background: #2a5298;
-  color: white;
-  border: none;
-  border-radius: 8px;
-}
-</style>
+  const booking = {
+    name: nameVal,
+    mobile: mobileVal,
+    email: emailVal,
+    idNumber: idVal,
+    plan: document.getElementById("planSelect").value,
+    createdAt: today,
+    validTill: validTillVal
+  };
+
+  for (let s of currentSlots) {
+    data[s] = booking;
+  }
+
+  await setDoc(seatRef, data);
+
+  closeModal();
+  clearForm();
+
+  alert("Booking saved successfully.");
+};
+
+createSeats();
+</script>
 </head>
 
 <body>
@@ -118,14 +122,17 @@ select {
 
 <div class="modal" id="modal">
   <div class="modal-content">
-    <h3>Member Details</h3>
-    <input type="text" id="name" placeholder="Name">
-    <input type="text" id="mobile" placeholder="Mobile">
-    <input type="email" id="email" placeholder="Email">
-    <input type="text" id="idNumber" placeholder="Aadhar / PAN">
-    <input type="date" id="validTill">
-    <button onclick="saveBooking()">Save</button>
-  </div>
+  <h3>Member Details</h3>
+  <input type="text" id="name" placeholder="Name">
+  <input type="text" id="mobile" placeholder="Mobile">
+  <input type="email" id="email" placeholder="Email">
+  <input type="text" id="idNumber" placeholder="Aadhar / PAN">
+  <input type="date" id="validTill">
+
+  <button onclick="saveBooking()">Save</button>
+  <button style="margin-top:8px;background:#999;" onclick="clearForm()">Clear</button>
+  <button style="margin-top:8px;background:#e74c3c;" onclick="closeModal()">Close</button>
+</div>
 </div>
 
 <script type="module">
@@ -202,3 +209,4 @@ createSeats();
 
 </body>
 </html>
+
