@@ -124,6 +124,30 @@ body {
   border:1px solid #ccc;
 }
 
+  .availability-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  background: #e8f8f1;
+  border: 1px solid #2ecc71;
+  font-weight: 600;
+}
+
+.availability-badge .label {
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.availability-badge .value {
+  background: #2ecc71;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
 .modal-content button {
   width:100%;
   padding:10px;
@@ -170,7 +194,10 @@ button {
     </select>
 
     <button id="exportBtn" class="export-btn">Export</button>
-    <div id="availableCount" class="counter-box">Available: 0</div>
+    <div id="availableCount" class="availability-badge">
+    <span class="label">Available</span>
+    <span class="value">0</span>
+</div>
   </div>
 
   <button id="logoutBtn" class="logout-btn">Logout</button>
@@ -286,7 +313,7 @@ function updateDashboard(){
     else card.classList.add("disabled-seat");
   }
 
-  document.getElementById("availableCount").innerText="Available: "+availableCount;
+  document.querySelector("#availableCount .value").innerText = availableCount;
 }
 
 async function initialize(){
@@ -311,3 +338,4 @@ initialize();
 </script>
 </body>
 </html>
+
