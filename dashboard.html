@@ -266,7 +266,7 @@ const modal = document.getElementById("modal");
 
 let currentSeat = null;
 let currentSlots = [];
-
+let seatCache = {};
 function createSeats() {
   for (let i = 1; i <= 142; i++) {
     const card = document.createElement("div");
@@ -308,8 +308,7 @@ async function updateSeatAvailability() {
       `.seat-card:nth-child(${i})`
     );
 
-    const seatRef = doc(db, "seats", "seat_" + i);
-    const snap = await getDoc(seatRef);
+    const data = seatCache["seat_" + i];
 
     let isAvailable = true;
 
@@ -502,7 +501,7 @@ document.getElementById("exportBtn").onclick = async () => {
 };
   
   
-async function loadSeatStatus() {
+/*async function loadSeatStatus() {
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -544,12 +543,57 @@ async function loadSeatStatus() {
 
     });
   }
+}*/
+
+async function loadAllSeats() {
+
+  const snapshot = await getDocs(collection(db, "seats"));
+
+  seatCache = {};
+
+  snapshot.forEach(docSnap => {
+    seatCache[docSnap.id] = docSnap.data();
+  });
+
+}
+
+function applySeatStatusFromCache() {
+
+  const today = new Date().toISOString().split("T")[0];
+
+  for (let i = 1; i <= 142; i++) {
+
+    const data = seatCache["seat_" + i];
+
+    ["s1","s2","s3","s4"].forEach(slot => {
+
+      const dot = document.querySelector(
+        `.dot[data-seat="${i}"][data-slot="${slot}"]`
+      );
+
+      dot.classList.remove("green","grey","orange");
+
+      if (!data || !data[slot]) {
+        dot.classList.add("green");
+        return;
+      }
+
+      const validTill = data[slot].validTill;
+
+      if (validTill < today) dot.classList.add("green");
+      else if (validTill === today) dot.classList.add("orange");
+      else dot.classList.add("grey");
+
+    });
+  }
 }
 
 async function initializeDashboard() {
 
   createSeats();
-  await loadSeatStatus();
+
+  await loadAllSeats();   // one read only
+  applySeatStatusFromCache();
   await updateSeatAvailability();
   updateDotVisibility();
 
@@ -577,8 +621,7 @@ grid.addEventListener("click", async (e) => {
   else if (plan === "all") currentSlots = ["s1","s2","s3","s4"];
   else currentSlots = [clickedSlot];
 
-  const seatRef = doc(db, "seats", "seat_" + currentSeat);
-  const snap = await getDoc(seatRef);
+  const data = seatCache["seat_" + currentSeat];
 
   if (snap.exists() && snap.data()[clickedSlot]) {
     const booking = snap.data()[clickedSlot];
@@ -644,7 +687,9 @@ document.getElementById("saveBtn").onclick = async () => {
     data[s] = booking;
   }
 
-  await setDoc(seatRef, data);
+  seatCache["seat_" + currentSeat] = data;
+applySeatStatusFromCache();
+await updateSeatAvailability();
 
   modal.style.display = "none";
   alert("Booking saved.");
@@ -655,6 +700,7 @@ document.getElementById("saveBtn").onclick = async () => {
 
 </body>
 </html>
+
 
 
 
