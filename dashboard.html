@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Library Seat Structure</title>
+<title>Library Seat Mapping</title>
 
 <style>
 * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
@@ -266,7 +266,7 @@ const modal = document.getElementById("modal");
 
 let currentSeat = null;
 let currentSlots = [];
-let seatCache = {};
+
 function createSeats() {
   for (let i = 1; i <= 142; i++) {
     const card = document.createElement("div");
@@ -308,7 +308,8 @@ async function updateSeatAvailability() {
       `.seat-card:nth-child(${i})`
     );
 
-    const data = seatCache["seat_" + i];
+    const seatRef = doc(db, "seats", "seat_" + i);
+    const snap = await getDoc(seatRef);
 
     let isAvailable = true;
 
@@ -501,7 +502,7 @@ document.getElementById("exportBtn").onclick = async () => {
 };
   
   
-/*async function loadSeatStatus() {
+async function loadSeatStatus() {
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -543,57 +544,12 @@ document.getElementById("exportBtn").onclick = async () => {
 
     });
   }
-}*/
-
-async function loadAllSeats() {
-
-  const snapshot = await getDocs(collection(db, "seats"));
-
-  seatCache = {};
-
-  snapshot.forEach(docSnap => {
-    seatCache[docSnap.id] = docSnap.data();
-  });
-
-}
-
-function applySeatStatusFromCache() {
-
-  const today = new Date().toISOString().split("T")[0];
-
-  for (let i = 1; i <= 142; i++) {
-
-    const data = seatCache["seat_" + i];
-
-    ["s1","s2","s3","s4"].forEach(slot => {
-
-      const dot = document.querySelector(
-        `.dot[data-seat="${i}"][data-slot="${slot}"]`
-      );
-
-      dot.classList.remove("green","grey","orange");
-
-      if (!data || !data[slot]) {
-        dot.classList.add("green");
-        return;
-      }
-
-      const validTill = data[slot].validTill;
-
-      if (validTill < today) dot.classList.add("green");
-      else if (validTill === today) dot.classList.add("orange");
-      else dot.classList.add("grey");
-
-    });
-  }
 }
 
 async function initializeDashboard() {
 
   createSeats();
-
-  await loadAllSeats();   // one read only
-  applySeatStatusFromCache();
+  await loadSeatStatus();
   await updateSeatAvailability();
   updateDotVisibility();
 
@@ -621,7 +577,8 @@ grid.addEventListener("click", async (e) => {
   else if (plan === "all") currentSlots = ["s1","s2","s3","s4"];
   else currentSlots = [clickedSlot];
 
-  const data = seatCache["seat_" + currentSeat];
+  const seatRef = doc(db, "seats", "seat_" + currentSeat);
+  const snap = await getDoc(seatRef);
 
   if (snap.exists() && snap.data()[clickedSlot]) {
     const booking = snap.data()[clickedSlot];
@@ -687,9 +644,7 @@ document.getElementById("saveBtn").onclick = async () => {
     data[s] = booking;
   }
 
-  seatCache["seat_" + currentSeat] = data;
-applySeatStatusFromCache();
-await updateSeatAvailability();
+  await setDoc(seatRef, data);
 
   modal.style.display = "none";
   alert("Booking saved.");
@@ -700,14 +655,3 @@ await updateSeatAvailability();
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
