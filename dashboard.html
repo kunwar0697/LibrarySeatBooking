@@ -227,6 +227,7 @@ Export to Excel
     <input type="text" id="mobile" placeholder="Mobile">
     <input type="email" id="email" placeholder="Email">
     <input type="text" id="idNumber" placeholder="Aadhar / PAN">
+    <input type="text" id="biometricId" placeholder="Biometric ID">
     <label style="font-size:13px;color:#555;">Valid Till Date</label>
     <input type="date" id="validTill">
     <small style="color:#888;">Select subscription end date</small>
@@ -587,6 +588,7 @@ grid.addEventListener("click", async (e) => {
     document.getElementById("mobile").value = booking.mobile || "";
     document.getElementById("email").value = booking.email || "";
     document.getElementById("idNumber").value = booking.idNumber || "";
+    document.getElementById("biometricId").value = booking.biometricId || "";
     document.getElementById("validTill").value = booking.validTill || "";
 
   } else {
@@ -595,6 +597,7 @@ grid.addEventListener("click", async (e) => {
     document.getElementById("mobile").value = "";
     document.getElementById("email").value = "";
     document.getElementById("idNumber").value = "";
+    document.getElementById("biometricId").value = "";
     document.getElementById("validTill").value = "";
   }
 
@@ -608,6 +611,7 @@ document.getElementById("clearBtn").onclick = () => {
   document.getElementById("mobile").value = "";
   document.getElementById("email").value = "";
   document.getElementById("idNumber").value = "";
+  document.getElementById("biometricId").value = "";
   document.getElementById("validTill").value = "";
 };
 
@@ -618,6 +622,7 @@ document.getElementById("saveBtn").onclick = async () => {
   const emailVal = document.getElementById("email").value.trim();
   const idVal = document.getElementById("idNumber").value.trim();
   const validTillVal = document.getElementById("validTill").value;
+  const biometricVal = document.getElementById("biometricId").value.trim();
 
   if (!nameVal || !mobileVal || !validTillVal) {
     alert("Name, Mobile and Valid Till date required.");
@@ -635,6 +640,7 @@ document.getElementById("saveBtn").onclick = async () => {
     mobile: mobileVal,
     email: emailVal,
     idNumber: idVal,
+    biometricId: biometricVal,
     plan: document.getElementById("planSelect").value,
     createdAt: today,
     validTill: validTillVal
@@ -655,3 +661,4 @@ document.getElementById("saveBtn").onclick = async () => {
 
 </body>
 </html>
+
