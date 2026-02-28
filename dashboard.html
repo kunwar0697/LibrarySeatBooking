@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Library Seat Mapping</title>
+<title>Library Seat Dashboard</title>
 
 <style>
 * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
@@ -14,17 +14,41 @@ body {
   padding: 15px;
 }
 
-.top-bar {
-  margin-bottom: 20px;
+/* Loader */
+#loader {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  z-index: 9999;
 }
 
-select {
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  width: 100%;
-  max-width: 350px;
-  font-size: 14px;
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 6px solid #eee;
+  border-top: 6px solid #2a5298;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.top-bar {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:20px;
 }
 
 .seat-grid {
@@ -42,182 +66,116 @@ select {
   transition: 0.2s;
 }
 
-.seat-card:hover {
-  transform: translateY(-3px);
+.disabled-seat {
+  background: #fdecea;
+  pointer-events: none;
+  opacity: 0.7;
 }
 
 .seat-number {
   font-size: 18px;
   font-weight: 700;
   margin-bottom: 10px;
-  color: #2c3e50;
 }
 
 .dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
+  display:flex;
+  justify-content:center;
+  gap:8px;
 }
 
 .dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  cursor: pointer;
-  transition: 0.2s;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  cursor:pointer;
 }
 
-  .disabled-seat {
-  background: #fdecea;
-  pointer-events: none;
-  opacity: 0.7;
-}
-  
-.green { background: #2ecc71; }
-.red { background: #e74c3c; }
-.grey { background: #7f8c8d; }
-.orange { background: #f39c12; }
+.green { background:#2ecc71; }
+.grey { background:#7f8c8d; }
+.orange { background:#f39c12; }
 
 /* Modal */
-
 .modal {
   position: fixed;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
+  top:0; left:0;
+  width:100%;
+  height:100%;
   background: rgba(0,0,0,0.4);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  padding: 15px;
+  display:none;
+  justify-content:center;
+  align-items:center;
+  padding:15px;
 }
 
 .modal-content {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 400px;
-}
-
-.modal-content h3 {
-  margin-top: 0;
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  width:100%;
+  max-width:400px;
 }
 
 .modal-content input {
-  width: 100%;
-  padding: 9px;
-  margin-bottom: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+  width:100%;
+  padding:9px;
+  margin-bottom:10px;
+  border-radius:6px;
+  border:1px solid #ccc;
 }
 
 .modal-content button {
-  padding: 10px;
-  width: 100%;
-  border: none;
-  border-radius: 8px;
-  margin-top: 6px;
-  font-weight: 500;
-  cursor: pointer;
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  margin-top:6px;
+  cursor:pointer;
 }
 
-.save-btn { background: #2a5298; color: white; }
-.clear-btn { background: #999; color: white; }
-.close-btn { background: #e74c3c; color: white; }
+.save-btn { background:#2a5298; color:white; }
+.clear-btn { background:#999; color:white; }
+.close-btn { background:#e74c3c; color:white; }
 
-@media (max-width: 480px) {
-  .seat-card { padding: 10px; }
+button {
+  padding:10px 14px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-  
+.export-btn { background:#27ae60; color:white; }
+.logout-btn { background:#e74c3c; color:white; }
+.counter-box { background:#2ecc71; color:white; font-weight:600; }
 
 </style>
 </head>
-
 <body>
-  <!--
-<button id="exportBtn" style="margin-left:10px;padding:10px;border:none;border-radius:8px;background:#27ae60;color:white;">
-Export to Excel
-</button>
-</br>
+
+<div id="loader">
+  <div class="spinner"></div>
+  <p>Loading seat data...</p>
+</div>
+
 <div class="top-bar">
-<select id="planSelect">
-  <option value="s1">6-10 AM (399)</option>
-  <option value="s2">10-2 PM (399)</option>
-  <option value="s3">2-6 PM (399)</option>
-  <option value="s4">6-10 PM (399)</option>
-  <option value="s1s2">6AM-2PM (799)</option>
-  <option value="s3s4">2PM-10PM (799)</option>
-  <option value="all">6AM-10PM (1199)</option>
-</select>
-</div>
--->
-<!-- LOADER -->
-  <div id="loader" style="
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:#ffffff;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  z-index:9999;
-  flex-direction:column;
-">
-  <div style="
-    width:50px;
-    height:50px;
-    border:6px solid #eee;
-    border-top:6px solid #2a5298;
-    border-radius:50%;
-    animation:spin 1s linear infinite;
-  "></div>
-  <p style="margin-top:15px;font-weight:600;color:#2c3e50;">
-    Loading seat data...
-  </p>
-</div>
-
-<div class="top-bar" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
-
   <div style="display:flex;gap:10px;flex-wrap:wrap;">
     <select id="planSelect">
-      <option value="s1">6AM - 10AM (&#8377;399)</option>
-      <option value="s2">10AM -2PM (&#8377;399)</option>
-      <option value="s3">2PM - 6PM (&#8377;399)</option>
-      <option value="s4">6PM - 10PM (&#8377;399)</option>
-      <option value="s1s2">6AM - 2PM (&#8377;799)</option>
-      <option value="s3s4">2PM - 10PM (&#8377;799)</option>
-      <option value="all">6AM - 10PM (&#8377;1199)</option>
+      <option value="s1">6-10 AM (₹399)</option>
+      <option value="s2">10-2 PM (₹399)</option>
+      <option value="s3">2-6 PM (₹399)</option>
+      <option value="s4">6-10 PM (₹399)</option>
+      <option value="s1s2">6AM-2PM (₹799)</option>
+      <option value="s3s4">2PM-10PM (₹799)</option>
+      <option value="all">6AM-10PM (₹1199)</option>
     </select>
 
-    <button id="exportBtn"
-      style="padding:10px 14px;border:none;border-radius:8px;background:#27ae60;color:white;">
-      Export to Excel
-    </button>
+    <button id="exportBtn" class="export-btn">Export</button>
+    <div id="availableCount" class="counter-box">Available: 0</div>
   </div>
 
-   <div id="availableCount"
-  style="padding:10px 14px;background:#2ecc71;color:white;border-radius:8px;font-weight:600;">
-  Available: -
+  <button id="logoutBtn" class="logout-btn">Logout</button>
 </div>
 
-
-  <button id="logoutBtn"
-    style="padding:10px 14px;border:none;border-radius:8px;background:#e74c3c;color:white;">
-    Logout
-  </button>
-
- 
-</div>
-
-  
 <div class="seat-grid" id="seatGrid"></div>
 
 <div class="modal" id="modal">
@@ -227,9 +185,8 @@ Export to Excel
     <input type="text" id="mobile" placeholder="Mobile">
     <input type="email" id="email" placeholder="Email">
     <input type="text" id="idNumber" placeholder="Aadhar / PAN">
-    <label style="font-size:13px;color:#555;">Valid Till Date</label>
+    <label style="font-size:13px;">Valid Till Date</label>
     <input type="date" id="validTill">
-    <small style="color:#888;">Select subscription end date</small>
     <button class="save-btn" id="saveBtn">Save</button>
     <button class="clear-btn" id="clearBtn">Clear</button>
     <button class="close-btn" id="closeBtn">Close</button>
@@ -239,39 +196,37 @@ Export to Excel
 <script type="module">
 
 import { db } from "./firebase.js";
-import { doc, getDoc, setDoc } from 
+import { collection, getDocs, doc, setDoc } from 
 "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-  import { signOut } from 
-"https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-import { collection, getDocs } from 
-"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-import { getAuth, onAuthStateChanged } from
+import { getAuth, onAuthStateChanged, signOut } from
 "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const auth = getAuth();
-
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = "index.html";
-  }
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-
-const grid = document.getElementById("seatGrid");
-const modal = document.getElementById("modal");
-
+let seatDataCache = {};
 let currentSeat = null;
 let currentSlots = [];
 
-function createSeats() {
-  for (let i = 1; i <= 142; i++) {
-    const card = document.createElement("div");
-    card.className = "seat-card";
-    card.innerHTML = `
+onAuthStateChanged(auth, user => {
+  if (!user) window.location.href = "index.html";
+});
+
+function showLoader(){ document.getElementById("loader").style.display="flex"; }
+function hideLoader(){ document.getElementById("loader").style.display="none"; }
+
+async function loadAllSeats(){
+  const snapshot = await getDocs(collection(db,"seats"));
+  seatDataCache = {};
+  snapshot.forEach(docSnap=>{
+    seatDataCache[docSnap.id] = docSnap.data();
+  });
+}
+
+function createSeats(){
+  const grid = document.getElementById("seatGrid");
+  for(let i=1;i<=142;i++){
+    const card=document.createElement("div");
+    card.className="seat-card";
+    card.innerHTML=`
       <div class="seat-number">${i}</div>
       <div class="dots">
         <div class="dot green" data-seat="${i}" data-slot="s1"></div>
@@ -284,388 +239,75 @@ function createSeats() {
   }
 }
 
-async function updateSeatAvailability() {
-
-  const plan = document.getElementById("planSelect").value;
-
-  let requiredSlots = [];
-
-  if (plan === "s1") requiredSlots = ["s1"];
-  else if (plan === "s2") requiredSlots = ["s2"];
-  else if (plan === "s3") requiredSlots = ["s3"];
-  else if (plan === "s4") requiredSlots = ["s4"];
-  else if (plan === "s1s2") requiredSlots = ["s1","s2"];
-  else if (plan === "s3s4") requiredSlots = ["s3","s4"];
-  else requiredSlots = ["s1","s2","s3","s4"];
-
-  const today = new Date().toISOString().split("T")[0];
-
-  let availableCount = 0;
-
-  for (let i = 1; i <= 142; i++) {
-
-    const card = document.querySelector(
-      `.seat-card:nth-child(${i})`
-    );
-
-    const seatRef = doc(db, "seats", "seat_" + i);
-    const snap = await getDoc(seatRef);
-
-    let isAvailable = true;
-
-    if (snap.exists()) {
-      const data = snap.data();
-
-      for (let slot of requiredSlots) {
-
-        if (!data[slot]) continue;
-
-        const validTill = data[slot].validTill;
-
-        if (validTill >= today) {
-          isAvailable = false;
-          break;
-        }
-      }
-    }
-
-    if (isAvailable) {
-      card.classList.remove("disabled-seat");
-      availableCount++;
-    } else {
-      card.classList.add("disabled-seat");
-    }
-  }
-
-  document.getElementById("availableCount").innerText =
-    "Available: " + availableCount;
-}
-  
- /* async function updateSeatAvailability() {
-
-  const plan = document.getElementById("planSelect").value;
-
-  let requiredSlots = [];
-
-  if (plan === "s1") requiredSlots = ["s1"];
-  else if (plan === "s2") requiredSlots = ["s2"];
-  else if (plan === "s3") requiredSlots = ["s3"];
-  else if (plan === "s4") requiredSlots = ["s4"];
-  else if (plan === "s1s2") requiredSlots = ["s1","s2"];
-  else if (plan === "s3s4") requiredSlots = ["s3","s4"];
-  else requiredSlots = ["s1","s2","s3","s4"];
-
-  const today = new Date().toISOString().split("T")[0];
-
-  for (let i = 1; i <= 142; i++) {
-
-    const card = document.querySelector(
-      `.seat-card:nth-child(${i})`
-    );
-
-    const seatRef = doc(db, "seats", "seat_" + i);
-    const snap = await getDoc(seatRef);
-
-    let isAvailable = true;
-
-    if (snap.exists()) {
-      const data = snap.data();
-
-      for (let slot of requiredSlots) {
-
-        if (!data[slot]) continue;
-
-        const validTill = data[slot].validTill;
-
-        if (validTill >= today) {
-          isAvailable = false;
-          break;
-        }
-      }
-    }
-
-    if (isAvailable) {
-      card.classList.remove("disabled-seat");
-    } else {
-      card.classList.add("disabled-seat");
-    }
-  }
-}*/
-
-  function updateDotVisibility() {
-
-  const plan = document.getElementById("planSelect").value;
-
-  let visibleSlots = [];
-
-  if (plan === "s1") visibleSlots = ["s1"];
-  else if (plan === "s2") visibleSlots = ["s2"];
-  else if (plan === "s3") visibleSlots = ["s3"];
-  else if (plan === "s4") visibleSlots = ["s4"];
-  else if (plan === "s1s2") visibleSlots = ["s1","s2"];
-  else if (plan === "s3s4") visibleSlots = ["s3","s4"];
-  else visibleSlots = ["s1","s2","s3","s4"];
-
-  document.querySelectorAll(".dot").forEach(dot => {
-    const slot = dot.dataset.slot;
-
-    if (visibleSlots.includes(slot)) {
-      dot.style.display = "block";
-    } else {
-      dot.style.display = "none";
-    }
-  });
-
+function getRequiredSlots(){
+  const plan=document.getElementById("planSelect").value;
+  if(plan==="s1") return ["s1"];
+  if(plan==="s2") return ["s2"];
+  if(plan==="s3") return ["s3"];
+  if(plan==="s4") return ["s4"];
+  if(plan==="s1s2") return ["s1","s2"];
+  if(plan==="s3s4") return ["s3","s4"];
+  return ["s1","s2","s3","s4"];
 }
 
- // document.getElementById("planSelect")
- // .addEventListener("change", updateDotVisibility);
+function updateDashboard(){
+  const today=new Date().toISOString().split("T")[0];
+  const requiredSlots=getRequiredSlots();
+  let availableCount=0;
 
-  /*document.getElementById("planSelect")
-  .addEventListener("change", () => {
-    updateDotVisibility();
-    updateSeatAvailability();
-  });*/
+  for(let i=1;i<=142;i++){
+    const card=document.querySelector(`.seat-card:nth-child(${i})`);
+    const data=seatDataCache["seat_"+i];
+    let isAvailable=true;
 
-  document.getElementById("planSelect")
-  .addEventListener("change", async () => {
-
-    document.getElementById("loader").style.display = "flex";
-
-    updateDotVisibility();
-    await updateSeatAvailability();
-
-    document.getElementById("loader").style.display = "none";
-
-  });
-
-document.getElementById("logoutBtn").onclick = async () => {
-  await signOut(auth);
-  window.location.href = "index.html";
-};
-  
-document.getElementById("exportBtn").onclick = async () => {
-
-  const snapshot = await getDocs(collection(db, "seats"));
-
-  let rows = [];
-  const today = new Date().toISOString().split("T")[0];
-
-  snapshot.forEach(docSnap => {
-
-    const seatId = docSnap.id.replace("seat_","");
-    const data = docSnap.data();
-
-    ["s1","s2","s3","s4"].forEach(slot => {
-
-      if (!data[slot]) return;
-
-      const booking = data[slot];
-
-      rows.push({
-        Seat: seatId,
-        Slot: slot,
-        Name: booking.name,
-        Mobile: booking.mobile,
-        Email: booking.email,
-        ID: booking.idNumber,
-        Plan: booking.plan,
-        CreatedDate: booking.createdAt,
-        ValidTill: booking.validTill,
-        Status: booking.validTill < today ? "Expired" : "Active"
-      });
-
-    });
-
-  });
-
-  if (rows.length === 0) {
-    alert("No data found.");
-    return;
-  }
-
-  let csv = Object.keys(rows[0]).join(",") + "\n";
-
-  rows.forEach(row => {
-    csv += Object.values(row).join(",") + "\n";
-  });
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "Library_Seat_Data.csv";
-  a.click();
-
-  URL.revokeObjectURL(url);
-};
-  
-  
-async function loadSeatStatus() {
-
-  const today = new Date().toISOString().split("T")[0];
-
-  for (let i = 1; i <= 142; i++) {
-
-    const seatRef = doc(db, "seats", "seat_" + i);
-    const snap = await getDoc(seatRef);
-
-    if (!snap.exists()) continue;
-
-    const data = snap.data();
-
-    ["s1","s2","s3","s4"].forEach(slot => {
-
-      const dot = document.querySelector(
-        `.dot[data-seat="${i}"][data-slot="${slot}"]`
-      );
-
-      if (!dot) return;
-
+    ["s1","s2","s3","s4"].forEach(slot=>{
+      const dot=document.querySelector(`.dot[data-seat="${i}"][data-slot="${slot}"]`);
       dot.classList.remove("green","grey","orange");
-
-      if (!data[slot]) {
-        dot.classList.add("green");
-        return;
+      if(!data||!data[slot]) dot.classList.add("green");
+      else{
+        const validTill=data[slot].validTill;
+        if(validTill<today) dot.classList.add("green");
+        else if(validTill===today) dot.classList.add("orange");
+        else dot.classList.add("grey");
       }
-
-      const validTill = data[slot].validTill;
-
-      if (validTill < today) {
-        dot.classList.add("green");
-      } 
-      else if (validTill === today) {
-        dot.classList.add("orange");
-      } 
-      else {
-        dot.classList.add("grey");
-      }
-
+      dot.style.display=requiredSlots.includes(slot)?"block":"none";
     });
+
+    if(data){
+      for(let slot of requiredSlots){
+        if(data[slot] && data[slot].validTill>=today){
+          isAvailable=false;
+          break;
+        }
+      }
+    }
+
+    if(isAvailable){ card.classList.remove("disabled-seat"); availableCount++; }
+    else card.classList.add("disabled-seat");
   }
+
+  document.getElementById("availableCount").innerText="Available: "+availableCount;
 }
 
-async function initializeDashboard() {
-
+async function initialize(){
+  showLoader();
   createSeats();
-  await loadSeatStatus();
-  await updateSeatAvailability();
-  updateDotVisibility();
-
-  document.getElementById("loader").style.display = "none";
+  await loadAllSeats();
+  updateDashboard();
+  hideLoader();
 }
 
-initializeDashboard();
-  
-//createSeats();
-//loadSeatStatus();
-//updateDotVisibility();
-//updateSeatAvailability();
-
-grid.addEventListener("click", async (e) => {
-
-  if (!e.target.classList.contains("dot")) return;
-
-  currentSeat = e.target.dataset.seat;
-  const clickedSlot = e.target.dataset.slot;
-
-  const plan = document.getElementById("planSelect").value;
-
-  if (plan === "s1s2") currentSlots = ["s1","s2"];
-  else if (plan === "s3s4") currentSlots = ["s3","s4"];
-  else if (plan === "all") currentSlots = ["s1","s2","s3","s4"];
-  else currentSlots = [clickedSlot];
-
-  const seatRef = doc(db, "seats", "seat_" + currentSeat);
-  const snap = await getDoc(seatRef);
-
-  if (snap.exists() && snap.data()[clickedSlot]) {
-    const booking = snap.data()[clickedSlot];
-
-    document.getElementById("name").value = booking.name || "";
-    document.getElementById("mobile").value = booking.mobile || "";
-    document.getElementById("email").value = booking.email || "";
-    document.getElementById("idNumber").value = booking.idNumber || "";
-    document.getElementById("validTill").value = booking.validTill || "";
-
-  } else {
-    // No booking → clear form
-    document.getElementById("name").value = "";
-    document.getElementById("mobile").value = "";
-    document.getElementById("email").value = "";
-    document.getElementById("idNumber").value = "";
-    document.getElementById("validTill").value = "";
-  }
-
-  modal.style.display = "flex";
+document.getElementById("planSelect").addEventListener("change",()=>{
+  updateDashboard();
 });
 
-document.getElementById("closeBtn").onclick = () => modal.style.display = "none";
-
-document.getElementById("clearBtn").onclick = () => {
-  document.getElementById("name").value = "";
-  document.getElementById("mobile").value = "";
-  document.getElementById("email").value = "";
-  document.getElementById("idNumber").value = "";
-  document.getElementById("validTill").value = "";
+document.getElementById("logoutBtn").onclick=async()=>{
+  await signOut(auth);
+  window.location.href="index.html";
 };
 
-document.getElementById("saveBtn").onclick = async () => {
+initialize();
 
-  const nameVal = document.getElementById("name").value.trim();
-  const mobileVal = document.getElementById("mobile").value.trim();
-  const emailVal = document.getElementById("email").value.trim();
-  const idVal = document.getElementById("idNumber").value.trim();
-  const validTillVal = document.getElementById("validTill").value;
-
-  if (!nameVal || !mobileVal || !validTillVal) {
-    alert("Name, Mobile and Valid Till date required.");
-    return;
-  }
-
-  const seatRef = doc(db, "seats", "seat_" + currentSeat);
-  const snap = await getDoc(seatRef);
-  let data = snap.exists() ? snap.data() : {};
-
-  const today = new Date().toISOString().split("T")[0];
-
-  const booking = {
-    name: nameVal,
-    mobile: mobileVal,
-    email: emailVal,
-    idNumber: idVal,
-    plan: document.getElementById("planSelect").value,
-    createdAt: today,
-    validTill: validTillVal
-  };
-
-  for (let s of currentSlots) {
-    data[s] = booking;
-  }
-
-  await setDoc(seatRef, data);
-
-  modal.style.display = "none";
-  alert("Booking saved.");
-};
-
-});
 </script>
-
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
